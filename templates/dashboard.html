@@ -242,10 +242,8 @@ input[type=file] { display: none; }
               Take photo
             </button>
           </div>
-          <!-- Gallery picker (all devices) -->
+          <!-- File inputs - camera input created dynamically for better mobile support -->
           <input type="file" id="fileInput" accept="image/*">
-          <!-- Camera capture (mobile only, shown via JS) -->
-          <input type="file" id="cameraInput" accept="image/*" capture="environment">
         </div>
 
         <!-- Preview -->
@@ -296,33 +294,52 @@ function setMode(mode) {
 }
 
 // ── Drag & Drop ──
-const dz  = document.getElementById('dropzone');
-const fi  = document.getElementById('fileInput');
-const ci  = document.getElementById('cameraInput');
+const dz     = document.getElementById('dropzone');
+const fi     = document.getElementById('fileInput');
 const camBtn = document.getElementById('cameraBtn');
 
-// Show camera button only on mobile/touch devices
+// ── Detect mobile ──
 function isMobile() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
          ('ontouchstart' in window && window.innerWidth <= 900);
 }
+
+// ── Show camera button on mobile ──
 if (isMobile()) {
   camBtn.style.display = 'inline-flex';
-  // On mobile, drop zone text changes
   document.querySelector('.drop-zone p').innerHTML =
-    'Tap to choose from gallery or use the camera below';
+    'Tap below to choose from gallery<br>or tap the camera button to shoot';
 }
 
+// ── Camera button: dynamically create a fresh input each time ──
+// This is the key fix — pre-rendered inputs with capture= are ignored
+// by some Android browsers. Creating fresh each click forces camera.
+camBtn.addEventListener('click', function(e) {
+  e.stopPropagation();
+  const cam = document.createElement('input');
+  cam.type    = 'file';
+  cam.accept  = 'image/*';
+  cam.capture = 'environment';   // rear camera
+  cam.style.display = 'none';
+  document.body.appendChild(cam);
+  cam.addEventListener('change', function() {
+    if (cam.files && cam.files[0]) handleFile(cam.files[0]);
+    document.body.removeChild(cam);
+  });
+  cam.click();
+});
+
+// ── Gallery file input ──
+fi.addEventListener('change', () => { if (fi.files[0]) handleFile(fi.files[0]); });
+
+// ── Drag & Drop (desktop) ──
 ['dragenter','dragover'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.add('dragover'); }));
 ['dragleave','drop'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.remove('dragover'); }));
 dz.addEventListener('drop', ev => { const f = ev.dataTransfer.files[0]; if (f) handleFile(f); });
 dz.addEventListener('click', e => {
-  // Don't trigger on button clicks inside the zone
   if (e.target.closest('button') || e.target.tagName === 'INPUT') return;
   fi.click();
 });
-fi.addEventListener('change', () => { if (fi.files[0]) handleFile(fi.files[0]); });
-ci.addEventListener('change', () => { if (ci.files[0]) handleFile(ci.files[0]); });
 
 function resetUpload() {
   document.getElementById('dropzone').style.display    = 'block';
