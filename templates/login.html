@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Log in — Verdant{% endblock %}
+{% block head %}
+<style>
+.auth-page { min-height: calc(100vh - 60px); display: flex; align-items: center; justify-content: center; padding: 40px 16px; }
+.auth-card { width: 100%; max-width: 420px; }
+.auth-header { text-align: center; margin-bottom: 40px; }
+.auth-header h1 { font-family: var(--r); font-weight: 300; font-size: 36px; letter-spacing: -1px; color: var(--cream); margin-bottom: 8px; }
+.auth-header h1 em { font-style: italic; color: var(--gold-l); }
+.auth-header p { font-size: 14px; color: var(--sage); }
+.auth-form { display: flex; flex-direction: column; gap: 20px; }
+.auth-submit {
+  width: 100%; padding: 14px; background: var(--moss); color: var(--fog);
+  border: none; border-radius: 12px; font-size: 15px; font-weight: 500;
+  cursor: pointer; transition: background .2s, transform .1s; margin-top: 4px;
+}
+.auth-submit:hover { background: var(--sage); }
+.auth-submit:active { transform: scale(.99); }
+.auth-footer { text-align: center; margin-top: 24px; font-size: 13px; color: var(--sage); }
+.auth-footer a { color: var(--mist); text-decoration: underline; text-underline-offset: 3px; }
+.auth-divider { display: flex; align-items: center; gap: 16px; margin: 4px 0; }
+.auth-divider span { font-family: var(--m); font-size: 10px; letter-spacing: 1px; color: var(--moss); }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: rgba(184,207,185,.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1>Welcome <em>back</em></h1>
+      <p>Log in to continue diagnosing your plants</p>
+    </div>
+    <form class="auth-form" method="POST" action="{{ url_for('login') }}">
+      <div class="form-group">
+        <label class="form-label" for="email">Email</label>
+        <input class="form-input" type="email" id="email" name="email"
+               value="{{ email }}" placeholder="you@example.com" required autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <input class="form-input" type="password" id="password" name="password"
+               placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="auth-submit">Log in</button>
+    </form>
+    <p class="auth-footer">Don't have an account? <a href="{{ url_for('signup') }}">Sign up free</a></p>
+  </div>
+</div>
+{% endblock %}

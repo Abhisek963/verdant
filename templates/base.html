@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0e1a0f">
+<title>{% block title %}Verdant{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Mono:wght@300;400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Variables ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink:      #0e1a0f;
+  --ink2:     #162118;
+  --ink3:     #1e2e20;
+  --moss:     #3d5c3f;
+  --sage:     #6b8f6e;
+  --mist:     #b8cfb9;
+  --fog:      #ddeade;
+  --cream:    #faf9f4;
+  --gold:     #c9a84c;
+  --gold-l:   #e8d08a;
+  --rust:     #b85c38;
+  --rust-l:   #e89070;
+  --healthy:  #4a9460;
+  --warn:     #c9a84c;
+  --danger:   #b85c38;
+  --nav-h:    60px;
+  --r:        'Fraunces', serif;
+  --s:        'Instrument Sans', sans-serif;
+  --m:        'DM Mono', monospace;
+}
+html { scroll-behavior: smooth; -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--ink);
+  color: var(--fog);
+  font-family: var(--s);
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 70% 50% at 10% 15%, rgba(61,92,63,.2) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 70% at 90% 80%, rgba(30,46,32,.3) 0%, transparent 55%);
+  pointer-events: none;
+}
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+button { cursor: pointer; font-family: var(--s); }
+input, textarea { font-family: var(--s); }
+
+/* ── Navigation ── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  height: var(--nav-h);
+  background: rgba(14,26,15,.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(184,207,185,.1);
+  display: flex; align-items: center;
+  padding: 0 24px;
+}
+.nav-inner {
+  max-width: 1100px; margin: 0 auto; width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nav-logo {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--r); font-size: 20px; font-weight: 300;
+  color: var(--fog); letter-spacing: -.3px;
+}
+.nav-logo-mark {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid var(--sage);
+  display: flex; align-items: center; justify-content: center;
+}
+.nav-logo-mark svg { width: 16px; height: 16px; }
+.nav-links { display: flex; align-items: center; gap: 6px; }
+.nav-link {
+  font-family: var(--m); font-size: 11px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--sage);
+  padding: 7px 14px; border-radius: 8px;
+  border: 1px solid transparent;
+  transition: all .2s;
+}
+.nav-link:hover { color: var(--fog); background: rgba(255,255,255,.05); }
+.nav-link.active { color: var(--fog); border-color: rgba(184,207,185,.2); background: rgba(184,207,185,.06); }
+.nav-btn {
+  font-family: var(--m); font-size: 11px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--fog);
+  padding: 7px 16px; border-radius: 8px;
+  background: var(--moss); border: none;
+  transition: all .2s;
+}
+.nav-btn:hover { background: var(--sage); }
+.nav-username {
+  font-family: var(--m); font-size: 11px; color: var(--mist);
+  letter-spacing: .5px;
+}
+
+/* ── Mobile nav ── */
+.nav-hamburger {
+  display: none; background: none; border: none;
+  color: var(--sage); padding: 8px; border-radius: 8px;
+}
+.nav-hamburger svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; }
+.nav-mobile-menu {
+  display: none; position: fixed; top: var(--nav-h); left: 0; right: 0;
+  background: rgba(14,26,15,.97); backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(184,207,185,.1);
+  padding: 16px 24px 24px; z-index: 99;
+  flex-direction: column; gap: 4px;
+}
+.nav-mobile-menu.open { display: flex; }
+.nav-mobile-link {
+  font-family: var(--m); font-size: 12px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--sage);
+  padding: 12px 16px; border-radius: 10px;
+  border: 1px solid transparent; transition: all .2s;
+}
+.nav-mobile-link:hover, .nav-mobile-link.active {
+  color: var(--fog); background: rgba(255,255,255,.05);
+  border-color: rgba(184,207,185,.15);
+}
+.nav-mobile-btn {
+  font-family: var(--m); font-size: 12px; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--fog);
+  padding: 12px 16px; border-radius: 10px;
+  background: var(--moss); border: none; margin-top: 8px;
+}
+
+/* ── Page wrapper ── */
+.page { padding-top: var(--nav-h); min-height: 100vh; position: relative; z-index: 1; }
+
+/* ── Flash messages ── */
+.flashes { position: fixed; top: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%); z-index: 200; display: flex; flex-direction: column; gap: 8px; width: min(420px, calc(100vw - 32px)); }
+.flash {
+  padding: 12px 18px; border-radius: 12px;
+  font-family: var(--m); font-size: 12px; letter-spacing: .3px;
+  animation: slideDown .3s ease;
+}
+.flash.success { background: rgba(74,148,96,.15); border: 1px solid rgba(74,148,96,.3); color: #7dcf96; }
+.flash.error   { background: rgba(184,92,56,.15);  border: 1px solid rgba(184,92,56,.35);  color: var(--rust-l); }
+.flash.info    { background: rgba(107,143,110,.12); border: 1px solid rgba(107,143,110,.25); color: var(--mist); }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Shared components ── */
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+.btn-primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--moss); color: var(--fog);
+  border: none; border-radius: 12px;
+  padding: 13px 26px; font-size: 14px; font-weight: 500;
+  transition: all .2s; letter-spacing: .2px;
+}
+.btn-primary:hover { background: var(--sage); transform: translateY(-1px); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: none; color: var(--mist);
+  border: 1px solid rgba(184,207,185,.25); border-radius: 12px;
+  padding: 12px 24px; font-size: 14px; font-weight: 500;
+  transition: all .2s;
+}
+.btn-outline:hover { border-color: rgba(184,207,185,.5); color: var(--fog); }
+
+.card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(184,207,185,.12);
+  border-radius: 20px;
+}
+.card-sm { border-radius: 14px; }
+
+.section-label {
+  font-family: var(--m); font-size: 10px;
+  letter-spacing: 2.5px; text-transform: uppercase; color: var(--sage);
+}
+
+/* ── Form shared styles ── */
+.form-group { display: flex; flex-direction: column; gap: 7px; }
+.form-label { font-family: var(--m); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage); }
+.form-input {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(184,207,185,.18);
+  border-radius: 12px; padding: 13px 16px;
+  font-size: 15px; color: var(--fog);
+  outline: none; transition: border-color .2s, background .2s;
+  width: 100%;
+}
+.form-input:focus { border-color: rgba(184,207,185,.45); background: rgba(255,255,255,.06); }
+.form-input::placeholder { color: var(--sage); }
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .nav-links, .nav-username { display: none; }
+  .nav-hamburger { display: flex; }
+  .wrap { padding: 0 16px; }
+}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-inner">
+    <a href="{{ url_for('landing') }}" class="nav-logo">
+      <div class="nav-logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#6b8f6e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22V12M12 12C12 7 7 3 2 4c0 5 4 9 10 8M12 12c0-5 5-9 10-8 0 5-4 9-10 8"/>
+        </svg>
+      </div>
+      Verdant
+    </a>
+
+    <div class="nav-links">
+      {% if current_user %}
+        <span class="nav-username">{{ current_user['username'] }}</span>
+        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Diagnose</a>
+        <a href="{{ url_for('history') }}"   class="nav-link {% if request.endpoint == 'history' %}active{% endif %}">History</a>
+        <a href="{{ url_for('logout') }}"    class="nav-btn">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}"  class="nav-link {% if request.endpoint == 'login' %}active{% endif %}">Log in</a>
+        <a href="{{ url_for('signup') }}" class="nav-btn">Sign up</a>
+      {% endif %}
+    </div>
+
+    <button class="nav-hamburger" onclick="toggleMenu()" aria-label="Menu">
+      <svg viewBox="0 0 24 24" id="menuIcon"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile menu -->
+<div class="nav-mobile-menu" id="mobileMenu">
+  {% if current_user %}
+    <span class="nav-mobile-link" style="color:var(--mist);cursor:default">{{ current_user['username'] }}</span>
+    <a href="{{ url_for('dashboard') }}" class="nav-mobile-link {% if request.endpoint == 'dashboard' %}active{% endif %}">Diagnose</a>
+    <a href="{{ url_for('history') }}"   class="nav-mobile-link {% if request.endpoint == 'history' %}active{% endif %}">History</a>
+    <a href="{{ url_for('logout') }}"    class="nav-mobile-btn">Log out</a>
+  {% else %}
+    <a href="{{ url_for('login') }}"  class="nav-mobile-link">Log in</a>
+    <a href="{{ url_for('signup') }}" class="nav-mobile-btn">Sign up free</a>
+  {% endif %}
+</div>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes" id="flashes">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Page content -->
+<div class="page">
+  {% block content %}{% endblock %}
+</div>
+
+<script>
+function toggleMenu() {
+  const m = document.getElementById('mobileMenu');
+  m.classList.toggle('open');
+}
+// Close menu on outside click
+document.addEventListener('click', e => {
+  const menu = document.getElementById('mobileMenu');
+  const btn  = document.querySelector('.nav-hamburger');
+  if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) {
+    menu.classList.remove('open');
+  }
+});
+// Auto-hide flash messages
+setTimeout(() => {
+  const f = document.getElementById('flashes');
+  if (f) f.style.opacity = '0', f.style.transition = 'opacity .5s', setTimeout(() => f.remove(), 500);
+}, 3500);
+</script>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

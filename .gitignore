@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pth
+.env
+verdant.db
+dataset/
+dataset_small/
+dataset_split/
+outputs/plant_disease_model.pth
+*.pyc

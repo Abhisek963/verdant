@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}History — Verdant{% endblock %}
+{% block head %}
+<style>
+.history-page { padding: 40px 0 80px; }
+.history-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 36px; flex-wrap: wrap; gap: 16px; }
+.history-header h1 { font-family: var(--r); font-weight: 300; font-size: 32px; letter-spacing: -.8px; color: var(--cream); }
+.history-header p  { font-size: 13px; color: var(--sage); margin-top: 4px; }
+.new-scan-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--moss); color: var(--fog); border: none; border-radius: 12px;
+  padding: 11px 22px; font-size: 13px; font-weight: 500; text-decoration: none; transition: all .2s;
+}
+.new-scan-btn:hover { background: var(--sage); transform: translateY(-1px); }
+
+/* Filter tabs */
+.filter-tabs { display: flex; gap: 6px; margin-bottom: 28px; }
+.filter-tab {
+  font-family: var(--m); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 7px 16px; border-radius: 100px; border: 1px solid rgba(184,207,185,.15);
+  color: var(--sage); background: none; cursor: pointer; transition: all .2s;
+}
+.filter-tab:hover { color: var(--fog); border-color: rgba(184,207,185,.3); }
+.filter-tab.active { color: var(--fog); background: rgba(184,207,185,.08); border-color: rgba(184,207,185,.3); }
+
+/* Scan grid */
+.scan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+
+/* Scan card */
+.scan-card {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(184,207,185,.12);
+  border-radius: 18px; overflow: hidden; transition: border-color .2s, background .2s;
+  display: flex; flex-direction: column;
+}
+.scan-card:hover { border-color: rgba(184,207,185,.25); background: rgba(255,255,255,.06); }
+.scan-thumb { width: 100%; aspect-ratio: 16/10; object-fit: cover; background: var(--ink3); }
+.scan-thumb-placeholder {
+  width: 100%; aspect-ratio: 16/10; background: var(--ink3);
+  display: flex; align-items: center; justify-content: center;
+}
+.scan-thumb-placeholder svg { width: 36px; height: 36px; stroke: var(--moss); fill: none; stroke-width: 1; stroke-linecap: round; }
+.scan-body { padding: 16px 18px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.scan-meta { display: flex; align-items: center; justify-content: space-between; }
+.scan-type-badge {
+  font-family: var(--m); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 100px; border: 1px solid;
+}
+.scan-type-badge.disease  { color: #7dcf96; border-color: rgba(74,148,96,.3); background: rgba(74,148,96,.1); }
+.scan-type-badge.identify { color: var(--gold-l); border-color: rgba(201,168,76,.3); background: rgba(201,168,76,.1); }
+.scan-date { font-family: var(--m); font-size: 10px; color: var(--moss); letter-spacing: .3px; }
+.scan-plant { font-family: var(--r); font-size: 12px; font-style: italic; color: var(--mist); }
+.scan-result { font-family: var(--r); font-size: 18px; font-weight: 400; color: var(--fog); letter-spacing: -.3px; line-height: 1.3; }
+.scan-advice { font-size: 12px; color: var(--sage); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.scan-footer { padding: 10px 18px 14px; border-top: 1px solid rgba(184,207,185,.08); display: flex; justify-content: flex-end; }
+.scan-delete {
+  font-family: var(--m); font-size: 10px; letter-spacing: 1px; text-transform: uppercase;
+  color: rgba(184,92,56,.5); background: none; border: none; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: all .2s;
+}
+.scan-delete:hover { color: var(--rust-l); background: rgba(184,92,56,.08); }
+
+/* Confidence badge */
+.scan-conf { font-family: var(--m); font-size: 11px; color: var(--sage); margin-top: 2px; }
+
+/* Empty state */
+.history-empty { text-align: center; padding: 100px 20px; }
+.history-empty svg { width: 64px; height: 64px; stroke: rgba(107,143,110,.2); fill: none; stroke-width: 1; stroke-linecap: round; margin: 0 auto 24px; }
+.history-empty h2 { font-family: var(--r); font-size: 24px; font-weight: 300; color: var(--mist); margin-bottom: 10px; }
+.history-empty p { font-size: 14px; color: var(--sage); margin-bottom: 28px; }
+
+@media (max-width: 640px) {
+  .scan-grid { grid-template-columns: 1fr; }
+  .history-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-page">
+  <div class="wrap">
+    <div class="history-header">
+      <div>
+        <h1>Scan History</h1>
+        <p>{{ scans|length }} scan{% if scans|length != 1 %}s{% endif %} saved to your account</p>
+      </div>
+      <a href="{{ url_for('dashboard') }}" class="new-scan-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        New scan
+      </a>
+    </div>
+
+    {% if scans %}
+      <!-- Filter tabs -->
+      <div class="filter-tabs">
+        <button class="filter-tab active" onclick="filterScans('all', this)">All</button>
+        <button class="filter-tab" onclick="filterScans('disease', this)">Disease</button>
+        <button class="filter-tab" onclick="filterScans('identify', this)">Identify</button>
+      </div>
+
+      <div class="scan-grid" id="scanGrid">
+        {% for scan in scans %}
+        <div class="scan-card" data-type="{{ scan['scan_type'] }}">
+          {% if scan['image_thumb'] %}
+            <img class="scan-thumb" src="data:image/jpeg;base64,{{ scan['image_thumb'] }}" alt="{{ scan['result'] }}" loading="lazy">
+          {% else %}
+            <div class="scan-thumb-placeholder">
+              <svg viewBox="0 0 24 24"><path d="M12 22V12M12 12C12 7 7 3 2 4c0 5 4 9 10 8M12 12c0-5 5-9 10-8 0 5-4 9-10 8"/></svg>
+            </div>
+          {% endif %}
+
+          <div class="scan-body">
+            <div class="scan-meta">
+              <span class="scan-type-badge {{ scan['scan_type'] }}">
+                {{ 'Disease' if scan['scan_type'] == 'disease' else 'Identify' }}
+              </span>
+              <span class="scan-date">{{ scan['created_at'][:16].replace('T',' ') }}</span>
+            </div>
+            {% if scan['plant_name'] %}
+              <div class="scan-plant">{{ scan['plant_name'] }}</div>
+            {% endif %}
+            <div class="scan-result">{{ scan['result'] or '—' }}</div>
+            {% if scan['confidence'] and scan['confidence'] > 0 %}
+              <div class="scan-conf">{{ "%.1f"|format(scan['confidence']) }}% confidence</div>
+            {% endif %}
+            {% if scan['advice'] %}
+              <div class="scan-advice">{{ scan['advice'] }}</div>
+            {% endif %}
+          </div>
+
+          <div class="scan-footer">
+            <form method="POST" action="{{ url_for('delete_scan', scan_id=scan['id']) }}"
+                  onsubmit="return confirm('Delete this scan?')">
+              <button type="submit" class="scan-delete">Delete</button>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+    {% else %}
+      <div class="history-empty">
+        <svg viewBox="0 0 24 24"><path d="M12 22V12M12 12C12 7 7 3 2 4c0 5 4 9 10 8M12 12c0-5 5-9 10-8 0 5-4 9-10 8"/></svg>
+        <h2>No scans yet</h2>
+        <p>Upload your first leaf photo to get started</p>
+        <a href="{{ url_for('dashboard') }}" class="btn-primary">Start scanning</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterScans(type, btn) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.scan-card').forEach(card => {
+    const show = type === 'all' || card.dataset.type === type;
+    card.style.display = show ? 'flex' : 'none';
+  });
+}
+</script>
+{% endblock %}

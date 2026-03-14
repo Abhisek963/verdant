@@ -1,0 +1,520 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Verdant{% endblock %}
+{% block head %}
+<style>
+/* ── Dashboard layout ── */
+.dashboard { padding: 40px 0 80px; }
+.db-header { margin-bottom: 36px; }
+.db-header h1 { font-family: var(--r); font-weight: 300; font-size: 32px; letter-spacing: -.8px; color: var(--cream); margin-bottom: 4px; }
+.db-header p  { font-size: 14px; color: var(--sage); }
+
+/* ── Mode tabs ── */
+.mode-tabs { display: flex; gap: 8px; margin-bottom: 32px; }
+.mode-tab {
+  display: flex; align-items: center; gap: 9px;
+  padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(184,207,185,.15);
+  font-family: var(--m); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--sage); background: none; cursor: pointer; transition: all .2s;
+}
+.mode-tab svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.5; stroke-linecap: round; }
+.mode-tab:hover { color: var(--fog); border-color: rgba(184,207,185,.3); }
+.mode-tab.active { color: var(--fog); background: rgba(184,207,185,.08); border-color: rgba(184,207,185,.3); }
+.mode-tab.active svg { stroke: var(--healthy); }
+
+/* ── Two-column grid ── */
+.db-grid { display: grid; grid-template-columns: 400px 1fr; gap: 24px; align-items: start; }
+
+/* ── Upload panel ── */
+.upload-panel { display: flex; flex-direction: column; gap: 16px; }
+.drop-zone {
+  background: rgba(255,255,255,.03);
+  border: 1.5px dashed rgba(184,207,185,.2);
+  border-radius: 20px; padding: 36px 24px;
+  text-align: center; cursor: pointer;
+  transition: all .25s; position: relative; overflow: hidden;
+}
+.drop-zone::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(61,92,63,.15) 0%, transparent 70%);
+  opacity: 0; transition: opacity .3s;
+}
+.drop-zone:hover::before, .drop-zone.dragover::before { opacity: 1; }
+.drop-zone:hover, .drop-zone.dragover { border-color: rgba(184,207,185,.45); background: rgba(255,255,255,.05); }
+.drop-zone.dragover { border-style: solid; }
+.dz-icon {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: rgba(107,143,110,.12); border: 1px solid rgba(107,143,110,.22);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px; transition: transform .2s;
+}
+.drop-zone:hover .dz-icon { transform: translateY(-3px); }
+.dz-icon svg { width: 24px; height: 24px; stroke: var(--sage); fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.drop-zone h3 { font-family: var(--r); font-size: 18px; font-weight: 400; color: var(--fog); margin-bottom: 6px; }
+.drop-zone p  { font-size: 13px; color: var(--sage); line-height: 1.5; }
+.drop-zone p span { color: var(--mist); text-decoration: underline; text-underline-offset: 3px; }
+.dz-btn {
+  margin-top: 18px; display: inline-flex; align-items: center; gap: 8px;
+  background: var(--moss); color: var(--fog); border: none; border-radius: 10px;
+  padding: 11px 22px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all .2s;
+}
+.dz-btn:hover { background: var(--sage); transform: translateY(-1px); }
+input[type=file] { display: none; }
+
+/* Preview card */
+.preview-card {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(184,207,185,.12);
+  border-radius: 18px; overflow: hidden; display: none;
+}
+.preview-card.show { display: block; }
+.preview-card img { width: 100%; display: block; aspect-ratio: 1; object-fit: cover; }
+.preview-meta {
+  padding: 12px 16px; border-top: 1px solid rgba(184,207,185,.1);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.preview-fname { font-family: var(--m); font-size: 10px; color: var(--sage); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn-retry {
+  font-family: var(--m); font-size: 10px; color: var(--mist);
+  background: none; border: 1px solid rgba(184,207,185,.2);
+  border-radius: 6px; padding: 5px 10px; cursor: pointer; transition: all .2s;
+}
+.btn-retry:hover { border-color: rgba(184,207,185,.5); color: var(--fog); }
+
+/* ── Loading ── */
+.loading-state {
+  display: none; text-align: center; padding: 80px 20px;
+  background: rgba(255,255,255,.02); border: 1px solid rgba(184,207,185,.1);
+  border-radius: 20px;
+}
+.loading-state.show { display: block; }
+.spinner {
+  width: 40px; height: 40px; border: 2px solid rgba(184,207,185,.1);
+  border-top-color: var(--sage); border-radius: 50%;
+  animation: spin .8s linear infinite; margin: 0 auto 18px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-family: var(--m); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage); animation: flicker 1.8s ease-in-out infinite; }
+@keyframes flicker { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+/* ── Results panel ── */
+.results-panel { display: flex; flex-direction: column; gap: 14px; }
+
+/* Top result */
+.top-result {
+  background: rgba(255,255,255,.04); border: 1px solid rgba(184,207,185,.12);
+  border-radius: 20px; padding: 26px 28px; position: relative; overflow: hidden;
+}
+.top-result::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; opacity: 0; transition: opacity .4s;
+}
+.top-result.is-healthy::before  { background: var(--healthy); opacity: 1; }
+.top-result.is-warning::before  { background: var(--warn); opacity: 1; }
+.top-result.is-danger::before   { background: var(--rust); opacity: 1; }
+.top-result.is-unknown::before  { background: rgba(184,207,185,.3); opacity: 1; }
+.result-mode-tag { font-family: var(--m); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--sage); margin-bottom: 12px; }
+.result-plant { font-family: var(--r); font-size: 13px; font-style: italic; color: var(--mist); margin-bottom: 3px; }
+.result-main  { font-family: var(--r); font-size: 28px; font-weight: 400; color: var(--cream); letter-spacing: -.5px; margin-bottom: 18px; line-height: 1.2; }
+.conf-wrap { display: flex; align-items: center; gap: 14px; }
+.conf-bg { flex: 1; height: 5px; background: rgba(255,255,255,.08); border-radius: 10px; overflow: hidden; }
+.conf-fill { height: 100%; border-radius: 10px; width: 0%; transition: width 1s cubic-bezier(.16,1,.3,1); }
+.is-healthy .conf-fill { background: var(--healthy); }
+.is-warning .conf-fill { background: var(--warn); }
+.is-danger  .conf-fill { background: var(--rust); }
+.conf-pct { font-family: var(--r); font-size: 22px; font-weight: 300; color: var(--mist); min-width: 58px; text-align: right; }
+
+/* Other predictions */
+.others-label { font-family: var(--m); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--sage); }
+.other-item {
+  background: rgba(255,255,255,.025); border: 1px solid rgba(184,207,185,.08);
+  border-radius: 12px; padding: 13px 16px;
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px;
+  opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s;
+}
+.other-item.show { opacity: 1; transform: translateY(0); }
+.other-name { font-size: 13px; color: var(--mist); line-height: 1.3; }
+.other-plant { font-family: var(--m); font-size: 10px; color: var(--sage); display: block; margin-bottom: 2px; }
+.other-pct  { font-family: var(--m); font-size: 11px; color: var(--sage); }
+.other-bar  { grid-column: 1/-1; height: 2px; background: rgba(255,255,255,.05); border-radius: 10px; overflow: hidden; }
+.other-fill { height: 100%; background: rgba(184,207,185,.2); border-radius: 10px; width: 0%; transition: width .7s cubic-bezier(.16,1,.3,1); }
+
+/* Unknown / Gemini card */
+.gemini-card {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(184,207,185,.12);
+  border-radius: 20px; padding: 24px 26px;
+}
+.gemini-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(107,143,110,.12); border: 1px solid rgba(107,143,110,.25);
+  border-radius: 100px; padding: 4px 12px;
+  font-family: var(--m); font-size: 10px; letter-spacing: 1px; color: #7dcf96;
+  margin-bottom: 16px;
+}
+.gemini-badge .dot { width: 5px; height: 5px; border-radius: 50%; background: #4a9460; animation: pulse 2s ease-in-out infinite; }
+.gemini-sees { font-family: var(--m); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage); margin-bottom: 6px; }
+.gemini-what { font-family: var(--r); font-size: 24px; font-weight: 400; color: var(--cream); margin-bottom: 14px; line-height: 1.3; }
+.gemini-advice { font-size: 13px; color: var(--mist); line-height: 1.75; padding-top: 14px; border-top: 1px solid rgba(184,207,185,.1); }
+
+/* Identify result */
+.identify-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.id-field { background: rgba(255,255,255,.025); border: 1px solid rgba(184,207,185,.08); border-radius: 12px; padding: 12px 16px; }
+.id-field-label { font-family: var(--m); font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--sage); margin-bottom: 4px; }
+.id-field-value { font-size: 14px; color: var(--fog); line-height: 1.4; }
+.id-full { grid-column: 1/-1; }
+.id-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(74,148,96,.12); border: 1px solid rgba(74,148,96,.25); border-radius: 100px; padding: 3px 10px; font-family: var(--m); font-size: 10px; color: #7dcf96; margin-bottom: 14px; }
+
+/* Unsupported warning */
+.unsupported-bar {
+  background: rgba(184,92,56,.08); border: 1px solid rgba(184,92,56,.25);
+  border-radius: 14px; padding: 16px 20px;
+  display: flex; gap: 12px; align-items: flex-start;
+}
+.unsupported-bar svg { width: 18px; height: 18px; stroke: var(--rust-l); fill: none; stroke-width: 1.5; stroke-linecap: round; flex-shrink: 0; margin-top: 1px; }
+.unsupported-bar h4 { font-family: var(--r); font-size: 15px; font-weight: 400; color: var(--rust-l); margin-bottom: 3px; }
+.unsupported-bar p { font-size: 13px; color: rgba(232,144,112,.75); line-height: 1.5; }
+
+/* Placeholder / empty results */
+.results-empty {
+  background: rgba(255,255,255,.02); border: 1px solid rgba(184,207,185,.08);
+  border-radius: 20px; padding: 60px 24px; text-align: center;
+}
+.results-empty svg { width: 48px; height: 48px; stroke: rgba(107,143,110,.3); fill: none; stroke-width: 1; stroke-linecap: round; margin: 0 auto 18px; }
+.results-empty p { font-family: var(--m); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--moss); }
+
+/* Camera button */
+.dz-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+.dz-btn-camera {
+  display: none; /* shown only on mobile via JS */
+  align-items: center; gap: 8px;
+  background: rgba(107,143,110,.15); color: var(--fog);
+  border: 1px solid rgba(107,143,110,.3); border-radius: 10px;
+  padding: 11px 22px; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .2s;
+}
+.dz-btn-camera:hover { background: rgba(107,143,110,.28); border-color: rgba(107,143,110,.5); }
+.dz-btn-camera svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dz-btn { margin-top: 0; } /* reset margin since now inside .dz-actions */
+
+/* Responsive */
+@media (max-width: 900px) { .db-grid { grid-template-columns: 1fr; } }
+@media (max-width: 480px) {
+  .mode-tabs { flex-direction: column; }
+  .identify-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <div class="wrap">
+    <div class="db-header">
+      <h1>Plant Scanner</h1>
+      <p>Upload a leaf photo to diagnose diseases or identify the plant</p>
+    </div>
+
+    <!-- Mode tabs -->
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-disease" onclick="setMode('disease')">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        Diagnose Disease
+      </button>
+      <button class="mode-tab" id="tab-identify" onclick="setMode('identify')">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        Identify Plant
+      </button>
+    </div>
+
+    <div class="db-grid">
+      <!-- Left: upload -->
+      <div class="upload-panel">
+        <!-- Drop zone -->
+        <div class="drop-zone" id="dropzone">
+          <div class="dz-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h3 id="dzTitle">Drop a leaf photo here</h3>
+          <p>Drag & drop or <span>browse</span> to select<br>JPG, PNG up to 16 MB</p>
+          <div class="dz-actions">
+            <button class="dz-btn" onclick="document.getElementById('fileInput').click()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/></svg>
+              Choose image
+            </button>
+            <button class="dz-btn-camera" id="cameraBtn" onclick="document.getElementById('cameraInput').click()">
+              <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Take photo
+            </button>
+          </div>
+          <!-- Gallery picker (all devices) -->
+          <input type="file" id="fileInput" accept="image/*">
+          <!-- Camera capture (mobile only, shown via JS) -->
+          <input type="file" id="cameraInput" accept="image/*" capture="environment">
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-card" id="previewCard">
+          <img id="previewImg" src="" alt="Uploaded image">
+          <div class="preview-meta">
+            <span class="preview-fname" id="previewFname">—</span>
+            <button class="btn-retry" onclick="resetUpload()">Try another</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: results -->
+      <div>
+        <!-- Loading -->
+        <div class="loading-state" id="loadingState">
+          <div class="spinner"></div>
+          <div class="loading-text" id="loadingText">Analysing...</div>
+        </div>
+
+        <!-- Results -->
+        <div class="results-panel" id="resultsPanel" style="display:none">
+          <!-- populated by JS -->
+        </div>
+
+        <!-- Empty state -->
+        <div class="results-empty" id="emptyState">
+          <svg viewBox="0 0 24 24"><path d="M12 22V12M12 12C12 7 7 3 2 4c0 5 4 9 10 8M12 12c0-5 5-9 10-8 0 5-4 9-10 8"/></svg>
+          <p id="emptyMsg">Upload a leaf to diagnose disease</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentMode = 'disease';
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('tab-disease').classList.toggle('active', mode === 'disease');
+  document.getElementById('tab-identify').classList.toggle('active', mode === 'identify');
+  document.getElementById('dzTitle').textContent  = mode === 'disease' ? 'Drop a leaf photo here' : 'Drop any plant photo';
+  document.getElementById('emptyMsg').textContent = mode === 'disease' ? 'Upload a leaf to diagnose disease' : 'Upload a photo to identify the plant';
+  resetUpload();
+}
+
+// ── Drag & Drop ──
+const dz  = document.getElementById('dropzone');
+const fi  = document.getElementById('fileInput');
+const ci  = document.getElementById('cameraInput');
+const camBtn = document.getElementById('cameraBtn');
+
+// Show camera button only on mobile/touch devices
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+         ('ontouchstart' in window && window.innerWidth <= 900);
+}
+if (isMobile()) {
+  camBtn.style.display = 'inline-flex';
+  // On mobile, drop zone text changes
+  document.querySelector('.drop-zone p').innerHTML =
+    'Tap to choose from gallery or use the camera below';
+}
+
+['dragenter','dragover'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.add('dragover'); }));
+['dragleave','drop'].forEach(e => dz.addEventListener(e, ev => { ev.preventDefault(); dz.classList.remove('dragover'); }));
+dz.addEventListener('drop', ev => { const f = ev.dataTransfer.files[0]; if (f) handleFile(f); });
+dz.addEventListener('click', e => {
+  // Don't trigger on button clicks inside the zone
+  if (e.target.closest('button') || e.target.tagName === 'INPUT') return;
+  fi.click();
+});
+fi.addEventListener('change', () => { if (fi.files[0]) handleFile(fi.files[0]); });
+ci.addEventListener('change', () => { if (ci.files[0]) handleFile(ci.files[0]); });
+
+function resetUpload() {
+  document.getElementById('dropzone').style.display    = 'block';
+  document.getElementById('previewCard').classList.remove('show');
+  document.getElementById('loadingState').classList.remove('show');
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('emptyState').style.display   = 'block';
+  fi.value = '';
+}
+
+function showLoading(msg) {
+  document.getElementById('dropzone').style.display    = 'none';
+  document.getElementById('previewCard').classList.remove('show');
+  document.getElementById('loadingState').classList.add('show');
+  document.getElementById('loadingText').textContent    = msg;
+  document.getElementById('resultsPanel').style.display = 'none';
+  document.getElementById('emptyState').style.display   = 'none';
+}
+
+function showResults() {
+  document.getElementById('loadingState').classList.remove('show');
+  document.getElementById('resultsPanel').style.display = 'flex';
+  document.getElementById('emptyState').style.display   = 'none';
+}
+
+function severityClass(condition) {
+  const c = condition.toLowerCase();
+  if (c.includes('healthy')) return 'is-healthy';
+  if (['blight','rot','virus','curl','mosaic','scab','spot'].some(w => c.includes(w))) return 'is-danger';
+  return 'is-warning';
+}
+
+function confidenceColor(cls) {
+  if (cls === 'is-healthy') return 'var(--healthy)';
+  if (cls === 'is-danger')  return 'var(--rust)';
+  return 'var(--warn)';
+}
+
+// ── Render disease result ──
+function renderDisease(data) {
+  const panel = document.getElementById('resultsPanel');
+  panel.innerHTML = '';
+
+  if (!data.supported) {
+    // Gemini says not supported
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="unsupported-bar" style="margin-bottom:14px">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <h4>Not in our dataset</h4>
+          <p>${data.what_i_see || 'This plant is not supported by our model yet.'}</p>
+        </div>
+      </div>
+      <div class="gemini-card">
+        <div class="gemini-badge"><span class="dot"></span>Gemini Vision Analysis</div>
+        <div class="gemini-sees">Identified as</div>
+        <div class="gemini-what">${data.plant_name || 'Unknown plant'}</div>
+        <div class="gemini-advice">${data.advice || ''}</div>
+      </div>`;
+    panel.appendChild(wrap);
+    showResults();
+    return;
+  }
+
+  // Supported plant — show model predictions
+  const top      = data.predictions[0];
+  const sevClass = severityClass(top.condition);
+
+  // Top result card
+  const topCard = document.createElement('div');
+  topCard.className = `top-result ${sevClass}`;
+  topCard.innerHTML = `
+    <div class="result-mode-tag">Disease detection</div>
+    <div class="result-plant">${top.plant}</div>
+    <div class="result-main">${top.condition}</div>
+    <div class="conf-wrap">
+      <div class="conf-bg"><div class="conf-fill" id="confFill"></div></div>
+      <div class="conf-pct">${top.probability.toFixed(1)}%</div>
+    </div>`;
+  panel.appendChild(topCard);
+
+  // Others label
+  const othersLabel = document.createElement('div');
+  othersLabel.className = 'others-label';
+  othersLabel.textContent = 'Other possibilities';
+  panel.appendChild(othersLabel);
+
+  // Other predictions
+  data.predictions.slice(1).forEach((p, i) => {
+    const item = document.createElement('div');
+    item.className = 'other-item';
+    item.innerHTML = `
+      <div class="other-name"><span class="other-plant">${p.plant}</span>${p.condition}</div>
+      <div class="other-pct">${p.probability.toFixed(1)}%</div>
+      <div class="other-bar"><div class="other-fill" style="width:0%" data-w="${p.probability}"></div></div>`;
+    panel.appendChild(item);
+    setTimeout(() => {
+      item.classList.add('show');
+      item.querySelector('.other-fill').style.width = p.probability + '%';
+    }, 120 + i * 80);
+  });
+
+  showResults();
+  setTimeout(() => { document.getElementById('confFill').style.width = top.probability + '%'; }, 80);
+}
+
+// ── Render identify result ──
+function renderIdentify(data) {
+  const panel = document.getElementById('resultsPanel');
+  panel.innerHTML = '';
+
+  if (!data.is_plant) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="unsupported-bar">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div>
+          <h4>Not a plant</h4>
+          <p>${data.care_tips || 'Please upload a photo of a plant.'}</p>
+        </div>
+      </div>`;
+    panel.appendChild(wrap);
+    showResults();
+    return;
+  }
+
+  const card = document.createElement('div');
+  card.className = 'top-result is-healthy';
+  card.innerHTML = `
+    <div class="result-mode-tag">Plant identification</div>
+    <div class="id-badge"><span class="dot" style="width:5px;height:5px;border-radius:50%;background:#4a9460;animation:pulse 2s ease-in-out infinite"></span>Confidence: ${data.confidence}</div>
+    <div class="result-main">${data.common_name || 'Unknown plant'}</div>
+    <div class="identify-grid">
+      <div class="id-field">
+        <div class="id-field-label">Scientific name</div>
+        <div class="id-field-value" style="font-style:italic">${data.scientific_name || '—'}</div>
+      </div>
+      <div class="id-field">
+        <div class="id-field-label">Plant family</div>
+        <div class="id-field-value">${data.plant_family || '—'}</div>
+      </div>
+      <div class="id-field id-full">
+        <div class="id-field-label">About</div>
+        <div class="id-field-value">${data.description || '—'}</div>
+      </div>
+      <div class="id-field id-full">
+        <div class="id-field-label">Care & disease tips</div>
+        <div class="id-field-value">${data.care_tips || '—'}</div>
+      </div>
+      <div class="id-field id-full">
+        <div class="id-field-label">Fun fact</div>
+        <div class="id-field-value">${data.fun_fact || '—'}</div>
+      </div>
+    </div>`;
+  panel.appendChild(card);
+  showResults();
+}
+
+// ── Main file handler ──
+async function handleFile(file) {
+  if (!file.type.startsWith('image/')) { alert('Please upload an image file.'); return; }
+
+  // Show preview
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('previewImg').src = e.target.result;
+    document.getElementById('previewFname').textContent = file.name;
+    document.getElementById('previewCard').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+
+  const loadMsg = currentMode === 'disease' ? 'Diagnosing disease...' : 'Identifying plant...';
+  showLoading(loadMsg);
+
+  const form = new FormData();
+  form.append('image', file);
+
+  const endpoint = currentMode === 'disease' ? '/api/diagnose' : '/api/identify';
+
+  try {
+    const res  = await fetch(endpoint, { method: 'POST', body: form });
+    const data = await res.json();
+    if (data.error) { alert('Error: ' + data.error); resetUpload(); return; }
+
+    if (currentMode === 'disease') renderDisease(data);
+    else                           renderIdentify(data);
+
+  } catch(err) {
+    alert('Could not reach server. Is Flask running?');
+    resetUpload();
+  }
+}
+</script>
+{% endblock %}
